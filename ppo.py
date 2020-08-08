@@ -131,10 +131,16 @@ class Agent:
                                     advantage=advantage, old_prediction=old_prediction,
                                   ))
         elif self.dic_agent_conf["OPTIMIZER"] is "RMSProp":
-            actor_network.compile(optimizer=RMSprop(lr=self.dic_agent_conf["ACTOR_LEARNING_RATE"]))
+            actor_network.compile(optimizer=RMSprop(lr=self.dic_agent_conf["ACTOR_LEARNING_RATE"]),
+                                 loss=self.proximal_policy_optimization_loss(
+                                    advantage=advantage, old_prediction=old_prediction,
+                                 ))
         else:
             print("Not such optimizer for actor network. Instead, we use adam optimizer")
-            actor_network.compile(optimizer=Adam(lr=self.dic_agent_conf["ACTOR_LEARNING_RATE"]))
+            actor_network.compile(optimizer=Adam(lr=self.dic_agent_conf["ACTOR_LEARNING_RATE"]),
+                                 loss=self.proximal_policy_optimization_loss(
+                                    advantage=advantage, old_prediction=old_prediction,
+                                 ))
         print("=== Build Actor Network ===")
         actor_network.summary()
 
@@ -197,6 +203,6 @@ class Agent:
             r = prob / (old_prob + 1e-10)
             return -K.mean(K.minimum(r * advantage, K.clip(r, min_value=1 - loss_clipping,
                                                            max_value=1 + loss_clipping) * advantage) + entropy_loss * (
-                           prob * K.log(prob + 1e-10)))
+                           K.mean(y_pred * K.log(y_pred + 1e-10), axis=-1, keepdims=True)))
 
         return loss
